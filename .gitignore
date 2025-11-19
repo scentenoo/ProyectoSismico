@@ -1,0 +1,23 @@
+﻿# .gitignore
+
+# Archivos JSON/GeoJSON grandes
+Data/Procesados/MunicipiosColombia.json
+Data/Procesados/*.json
+Data/Procesados/*.geojson
+
+# Datos originales grandes
+data/Originals/
+Data/Originals/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
