@@ -1,4 +1,4 @@
-﻿# .gitignore
+# .gitignore
 
 # Archivos JSON/GeoJSON grandes
 Data/Procesados/MunicipiosColombia.json
