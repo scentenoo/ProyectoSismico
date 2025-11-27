@@ -1,0 +1,40 @@
+{
+    "K-NN": {
+        "mejor_score": 0.9996749948815818,
+        "mejores_params": {
+            "metric": "manhattan",
+            "n_neighbors": "3",
+            "weights": "uniform"
+        },
+        "tiempo": 3.2529776096343994
+    },
+    "Random Forest": {
+        "mejor_score": 1.0,
+        "mejores_params": {
+            "max_depth": "20",
+            "min_samples_leaf": "1",
+            "min_samples_split": "2",
+            "n_estimators": "100"
+        },
+        "tiempo": 40.99003720283508
+    },
+    "XGBoost": {
+        "mejor_score": 1.0,
+        "mejores_params": {
+            "learning_rate": "0.1",
+            "max_depth": "7",
+            "n_estimators": "200",
+            "subsample": "0.8"
+        },
+        "tiempo": 16.662721872329712
+    },
+    "SVM": {
+        "mejor_score": 0.9960339913112005,
+        "mejores_params": {
+            "C": "10",
+            "gamma": "scale",
+            "kernel": "rbf"
+        },
+        "tiempo": 325.10085248947144
+    }
+}

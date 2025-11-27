@@ -1,0 +1,7 @@
+ANÁLISIS DE DATOS DE PLIEGUES
+============================================================
+
+Pliegues totales: 1163
+Pliegues largos (> promedio): 0
+Densidad de pliegues: 0.0000 pliegues/km²
+Tipo predominante: Sinclinal
