@@ -4,27 +4,15 @@ import seaborn as sns
 import os
 from datetime import datetime
 
-# Configuración de estilo
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
-# ==================== CONFIGURACIÓN ====================
 archivo_sismos = 'Data/Originals/Catálogo Sismicidad TECTO.csv'
 archivo_pliegues = 'Data/Procesados/pliegues_limpios.csv'
 carpeta_resultados = 'Data/Procesados/EDA'
 
-# Crear carpeta para resultados
 os.makedirs(carpeta_resultados, exist_ok=True)
 
-print("="*70)
-print("📊 FASE 3: ANÁLISIS EXPLORATORIO DE DATOS (EDA)")
-print("   3.1 ANÁLISIS UNIVARIADO")
-print("="*70)
-
-# ==================== CARGAR DATOS ====================
-print("\n📥 Cargando datos...")
-
-# Cargar sismos
 try:
     df_sismos = pd.read_csv(archivo_sismos)
     print(f"✅ Sismos cargados: {len(df_sismos)} registros")
@@ -32,7 +20,6 @@ except Exception as e:
     print(f"❌ Error cargando sismos: {e}")
     df_sismos = None
 
-# Cargar pliegues
 try:
     df_pliegues = pd.read_csv(archivo_pliegues)
     print(f"✅ Pliegues cargados: {len(df_pliegues)} registros")
@@ -40,13 +27,7 @@ except Exception as e:
     print(f"❌ Error cargando pliegues: {e}")
     df_pliegues = None
 
-# ==================== 1. DISTRIBUCIÓN DE SISMOS POR MAGNITUD ====================
 if df_sismos is not None:
-    print("\n" + "="*70)
-    print("📊 1. ANÁLISIS DE DISTRIBUCIÓN DE MAGNITUDES")
-    print("="*70)
-    
-    # Identificar columna de magnitud
     columna_mag = None
     for col in ['Mag.', 'Mag', 'Magnitud', 'magnitude', 'MAG']:
         if col in df_sismos.columns:
@@ -54,19 +35,8 @@ if df_sismos is not None:
             break
     
     if columna_mag:
-        # Limpiar datos
         df_sismos[columna_mag] = pd.to_numeric(df_sismos[columna_mag], errors='coerce')
         magnitudes = df_sismos[columna_mag].dropna()
-        
-        print(f"\n📈 Estadísticas de Magnitud:")
-        print(f"   Total de sismos: {len(magnitudes)}")
-        print(f"   Magnitud mínima: {magnitudes.min():.2f}")
-        print(f"   Magnitud máxima: {magnitudes.max():.2f}")
-        print(f"   Magnitud promedio: {magnitudes.mean():.2f}")
-        print(f"   Magnitud mediana: {magnitudes.median():.2f}")
-        print(f"   Desviación estándar: {magnitudes.std():.2f}")
-        
-        # Crear figura con múltiples gráficos
         fig, axes = plt.subplots(2, 2, figsize=(15, 12))
         fig.suptitle('Distribución de Sismos por Magnitud', fontsize=16, fontweight='bold')
         
@@ -125,12 +95,7 @@ if df_sismos is not None:
         print(f"\n✅ Gráfico guardado: {archivo_mag}")
         plt.close()
 
-# ==================== 2. DISTRIBUCIÓN DE TIPOS DE PLIEGUES ====================
 if df_pliegues is not None:
-    print("\n" + "="*70)
-    print("📊 2. ANÁLISIS DE DISTRIBUCIÓN DE TIPOS DE PLIEGUES")
-    print("="*70)
-    
     # Identificar columna de tipo
     columna_tipo = None
     for col in ['tipo', 'Tipo', 'Type', 'tipo_pliegue', 'Tipo_Pliegue', 'TIPO']:

@@ -3,12 +3,10 @@ import numpy as np
 import os
 from pathlib import Path
 
-# Configuración de rutas
 RUTA_ENTRADA = 'Data/Originals/Catálogo Sismicidad TECTO.csv'
 CARPETA_SALIDA = 'Data/Procesados'
 NOMBRE_SALIDA = 'LLCatálogo Sismicidad TECTO_limpio.xlsx'
 
-# Parámetros de validación para Colombia
 RANGOS_VALIDACION = {
     'magnitud': (0, 10),
     'latitud': (-5, 15),
@@ -17,13 +15,10 @@ RANGOS_VALIDACION = {
 }
 
 def cargar_datos(ruta):
-    """Carga el catálogo sísmico desde CSV"""
     df = pd.read_csv(ruta)
-    print(f"\n✓ Datos cargados: {len(df)} registros, {len(df.columns)} columnas")
     return df
 
 def identificar_columnas(df):
-    """Identifica automáticamente las columnas importantes del dataset"""
     mapeo = {}
     patrones = {
         'fecha_hora': ['fecha', 'hora'],
@@ -51,7 +46,6 @@ def identificar_columnas(df):
     return mapeo
 
 def limpiar_nulos(df, cols_criticas):
-    """Elimina registros con valores nulos en columnas críticas"""
     inicial = len(df)
     df_limpio = df.dropna(subset=cols_criticas)
     eliminados = inicial - len(df_limpio)
@@ -67,14 +61,11 @@ def convertir_tipos(df, cols_numericas):
         if col and col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    # Eliminar los que no se pudieron convertir
     df_limpio = df.dropna(subset=[c for c in cols_numericas if c])
-    print(f"✓ Tipos convertidos correctamente")
     
     return df_limpio
 
 def validar_rangos(df, mapeo):
-    """Valida que los valores estén en rangos geográficamente razonables"""
     eliminados_total = 0
     
     for campo, (min_val, max_val) in RANGOS_VALIDACION.items():
@@ -88,25 +79,15 @@ def validar_rangos(df, mapeo):
                 print(f"   • {campo}: {n_invalidos} valores fuera de rango")
                 eliminados_total += n_invalidos
     
-    if eliminados_total > 0:
-        print(f"\n🔍 Total de registros inválidos eliminados: {eliminados_total}")
-    
     return df
 
 def limpiar_texto(df, col_region):
-    """Limpia y normaliza campos de texto"""
     if col_region in df.columns:
         df[col_region] = df[col_region].str.strip()
         df = df[df[col_region] != '']
     
     return df
 def main():
-    """Función principal que ejecuta el pipeline de limpieza"""
-    print("\n" + "="*70)
-    print("🌋 LIMPIEZA DE CATÁLOGO SÍSMICO")
-    print("="*70)
-    
-    # Crear carpeta de salida
     Path(CARPETA_SALIDA).mkdir(parents=True, exist_ok=True)
     
     # Pipeline de limpieza
@@ -140,8 +121,6 @@ def main():
     ruta_salida = os.path.join(CARPETA_SALIDA, NOMBRE_SALIDA)
     df.to_excel(ruta_salida, index=False)
     print(f"✓ Guardado en: {ruta_salida}")
-    
-    print("\n✅ Limpieza completada exitosamente!\n")
     
     return df
 
