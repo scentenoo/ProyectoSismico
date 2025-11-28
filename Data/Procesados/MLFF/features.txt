@@ -1,0 +1,8 @@
+sismos_total
+magnitud_max
+magnitud_media
+magnitud_std
+densidad
+peligrosidad
+actividad_alta
+variabilidad_alta

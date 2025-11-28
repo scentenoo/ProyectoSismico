@@ -1,8 +1,0 @@
-ANÁLISIS DE DATOS SÍSMICOS
-============================================================
-
-Sismos totales: 7696
-Sismos con magnitud > 3.0: 42
-Magnitud máxima histórica: 4.30
-Magnitud promedio: 1.22
-Magnitud mediana: 1.20
