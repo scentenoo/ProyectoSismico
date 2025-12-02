@@ -2,7 +2,6 @@ import pickle
 import numpy as np
 import os
 
-# Cargar modelo
 carpeta_modelo = 'Data/Procesados/MLFF'
 
 with open(os.path.join(carpeta_modelo, 'modelo.pkl'), 'rb') as f:
@@ -24,7 +23,7 @@ def predecir_amenaza(sismos_total, magnitud_max, magnitud_media, magnitud_std):
         - probabilidades: array([prob_baja, prob_media, prob_alta])
         - confianza: float (0-1)
     """
-    # Crear features
+    # features
     X_dict = {
         'sismos_total': sismos_total,
         'magnitud_media': magnitud_media,
@@ -44,10 +43,8 @@ def predecir_amenaza(sismos_total, magnitud_max, magnitud_media, magnitud_std):
     clases = ['BAJA', 'MEDIA', 'ALTA']
     return clases[pred], probs, max(probs)
 
-
-# Ejemplo de uso
 if __name__ == "__main__":
-    # Ejemplo 1
+    # Ejemplo
     amenaza, probs, conf = predecir_amenaza(
         sismos_total=45,
         magnitud_max=2.8,

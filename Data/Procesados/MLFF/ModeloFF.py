@@ -18,18 +18,13 @@ warnings.filterwarnings('ignore')
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
-print("="*80)
-print("MODELO DE PREDICCIÓN - AMENAZA SÍSMICA (CORREGIDO + VISUALIZACIÓN)")
-print("="*80)
+print("MODELO DE PREDICCION - AMENAZA SISMICA")
 
 # Rutas
 archivo_sismos = r'Data\Procesados\LLCatálogo Sismicidad TECTO_limpio.xlsx'
 carpeta_salida = 'Data/Procesados/MLFF'
 os.makedirs(carpeta_salida, exist_ok=True)
 
-# ============================================================================
-# 1. CARGA Y PREPROCESAMIENTO
-# ============================================================================
 print("\n[1/9] Cargando datos...")
 sismos = pd.read_excel(archivo_sismos)
 print(f"Registros: {len(sismos)}")
@@ -48,9 +43,6 @@ sismos_agg['magnitud_std'] = sismos_agg['magnitud_std'].fillna(0)
 
 print(f"Municipios: {len(sismos_agg)}")
 
-# ============================================================================
-# 2. CLASIFICACIÓN DE AMENAZA
-# ============================================================================
 print("\n[3/9] Clasificando amenaza...")
 def clasificar_amenaza_real(mag_max, sismos_count):
     if mag_max >= 3.5:
@@ -73,9 +65,7 @@ for i, nombre in enumerate(clases):
     dist_amenaza.append({'clase': nombre, 'count': count, 'pct': pct})
     print(f"  {nombre}: {count} ({pct:.1f}%)")
 
-# ============================================================================
-# 3. SPLIT ESTRATIFICADO
-# ============================================================================
+
 print("\n[4/9] Split estratificado...")
 features_base = ['sismos_total', 'magnitud_media', 'magnitud_std', 'magnitud_mediana']
 
@@ -93,23 +83,20 @@ except ValueError as e:
         X, y, test_size=0.2, random_state=42
     )
 
-# ============================================================================
-# 4. FEATURE ENGINEERING (SIN LEAKAGE)
-# ============================================================================
 print("\n[5/9] Creando features (sin leakage)...")
 
-# Calcular estadísticas SOLO del conjunto de entrenamiento
+# estadIsticas SOLO del conjunto de entrenamiento
 train_max = X_train['sismos_total'].max()
 train_q75 = X_train['sismos_total'].quantile(0.75)
 train_std_median = X_train['magnitud_std'].median()
 
-# Aplicar a train
+# aplicar a train
 X_train_features = X_train.copy()
 X_train_features['densidad'] = X_train_features['sismos_total'] / train_max
 X_train_features['actividad_alta'] = (X_train_features['sismos_total'] > train_q75).astype(int)
 X_train_features['variabilidad_alta'] = (X_train_features['magnitud_std'] > train_std_median).astype(int)
 
-# Aplicar a test
+# aplicar a test
 X_test_features = X_test.copy()
 X_test_features['densidad'] = X_test_features['sismos_total'] / train_max
 X_test_features['actividad_alta'] = (X_test_features['sismos_total'] > train_q75).astype(int)
@@ -117,15 +104,12 @@ X_test_features['variabilidad_alta'] = (X_test_features['magnitud_std'] > train_
 
 features_finales = list(X_train_features.columns)
 
-# Escalado
+# escalado
 scaler = StandardScaler()
 X_train_sc = scaler.fit_transform(X_train_features)
 X_test_sc = scaler.transform(X_test_features)
 
-# ============================================================================
-# 5. ENTRENAMIENTO DE MÚLTIPLES MODELOS
-# ============================================================================
-print("\n[6/9] Entrenando múltiples modelos...")
+print("\n[6/9] Entrenamiento de multiples modelos...")
 
 modelos = {
     'Random Forest': RandomForestClassifier(
@@ -148,14 +132,14 @@ resultados = {}
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 for nombre, modelo in modelos.items():
-    # Validación cruzada
+    # validacion cruzada
     cv_scores = cross_val_score(modelo, X_train_sc, y_train, cv=cv, scoring='f1_weighted')
     
-    # Entrenar en todo el train
+    # entrenar en todo el train
     modelo.fit(X_train_sc, y_train)
     y_pred = modelo.predict(X_test_sc)
     
-    # Métricas
+    # metricas
     acc = accuracy_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred, average='weighted')
     kappa = cohen_kappa_score(y_test, y_pred)
@@ -175,27 +159,22 @@ for nombre, modelo in modelos.items():
     print(f"    CV F1: {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
     print(f"    Test - Acc: {acc:.3f} | F1: {f1:.3f} | Kappa: {kappa:.3f}")
 
-# ============================================================================
-# 6. SELECCIÓN DEL MEJOR MODELO
-# ============================================================================
-print("\n[7/9] Seleccionando mejor modelo...")
+print("\n[7/9] seleccionando mejor modelo...")
 mejor = max(resultados.items(), key=lambda x: x[1]['f1'])
 mejor_nombre = mejor[0]
 mejor_modelo = mejor[1]['modelo']
 y_pred = mejor[1]['y_pred']
 
-print(f"\n🏆 Mejor modelo: {mejor_nombre}")
+print(f"\n mejor modelo: {mejor_nombre}")
 print(f"   F1 Test: {mejor[1]['f1']:.4f}")
 print(f"   F1 CV: {mejor[1]['cv_mean']:.4f} ± {mejor[1]['cv_std']:.4f}")
 print(f"   Kappa: {mejor[1]['kappa']:.4f}")
 
-print(f"\n📊 Reporte de Clasificación:")
+print(f"\n reporte de clasificacion:")
 print(classification_report(y_test, y_pred, target_names=clases, zero_division=0))
 
-# ============================================================================
-# 7. GUARDAR MODELOS Y METADATA
-# ============================================================================
-print("\n[8/9] Guardando modelos y metadata...")
+
+print("\n[8/9] guardando modelos y metadata...")
 
 with open(os.path.join(carpeta_salida, 'modelo.pkl'), 'wb') as f:
     pickle.dump(mejor_modelo, f)
@@ -206,7 +185,7 @@ with open(os.path.join(carpeta_salida, 'scaler.pkl'), 'wb') as f:
 with open(os.path.join(carpeta_salida, 'features.txt'), 'w') as f:
     f.write('\n'.join(features_finales))
 
-# Guardar estadísticas de train
+# guardar estadisticas de train
 stats_train = {
     'max_sismos': float(train_max),
     'q75_sismos': float(train_q75),
@@ -216,7 +195,7 @@ stats_train = {
 with open(os.path.join(carpeta_salida, 'train_stats.pkl'), 'wb') as f:
     pickle.dump(stats_train, f)
 
-# Comparación de modelos
+# comparacion de modelos
 comp_df = pd.DataFrame({
     'modelo': list(resultados.keys()),
     'f1_cv': [r['cv_mean'] for r in resultados.values()],
@@ -227,20 +206,17 @@ comp_df = pd.DataFrame({
 
 comp_df.to_csv(os.path.join(carpeta_salida, 'comparacion_modelos.csv'), index=False)
 
-# ============================================================================
-# 8. VISUALIZACIÓN COMPLETA
-# ============================================================================
-print("\n[9/9] Generando visualizaciones...")
+print("\n[9/9] generando visualizaciones...")
 
 fig = plt.figure(figsize=(20, 12))
 gs = fig.add_gridspec(3, 4, hspace=0.3, wspace=0.3)
 
-# --- GRÁFICO 1: Comparación de Modelos (F1) ---
+# --- GRAFICO 1: Comparacion de Modelos (F1) ---
 ax1 = fig.add_subplot(gs[0, :2])
 colors_comp = ['#2ecc71' if i == 0 else '#3498db' for i in range(len(comp_df))]
 bars = ax1.barh(comp_df['modelo'], comp_df['f1_test'], color=colors_comp, alpha=0.8)
 ax1.set_xlabel('F1-Score (Test)', fontsize=11, fontweight='bold')
-ax1.set_title('🏆 Comparación de Modelos', fontsize=13, fontweight='bold', pad=15)
+ax1.set_title('Comparacion de modelos', fontsize=13, fontweight='bold', pad=15)
 ax1.set_xlim(0, 1)
 ax1.grid(axis='x', alpha=0.3)
 
@@ -248,16 +224,16 @@ for i, (idx, row) in enumerate(comp_df.iterrows()):
     ax1.text(row['f1_test'] + 0.02, i, f"{row['f1_test']:.3f}", 
              va='center', fontsize=10, fontweight='bold')
 
-# --- GRÁFICO 2: Matriz de Confusión ---
+# --- GRAFICO 2: matriz de Confusion ---
 ax2 = fig.add_subplot(gs[0, 2:])
 cm = confusion_matrix(y_test, y_pred)
 sns.heatmap(cm, annot=True, fmt='d', cmap='RdYlGn', ax=ax2,
             xticklabels=clases, yticklabels=clases, cbar_kws={'label': 'Frecuencia'})
 ax2.set_ylabel('Real', fontsize=11, fontweight='bold')
-ax2.set_xlabel('Predicción', fontsize=11, fontweight='bold')
-ax2.set_title(f'🎯 Matriz de Confusión - {mejor_nombre}', fontsize=13, fontweight='bold', pad=15)
+ax2.set_xlabel('Prediccion', fontsize=11, fontweight='bold')
+ax2.set_title(f' Matriz de Confusion - {mejor_nombre}', fontsize=13, fontweight='bold', pad=15)
 
-# --- GRÁFICO 3: Validación Cruzada (CV Scores) ---
+# --- GRAFICO 3: validación Cruzada (CV Scores) ---
 ax3 = fig.add_subplot(gs[1, 0])
 cv_data = []
 for nombre, res in resultados.items():
@@ -268,12 +244,12 @@ cv_df = pd.DataFrame(cv_data)
 sns.boxplot(data=cv_df, y='Modelo', x='F1', ax=ax3, palette='Set2')
 ax3.set_xlabel('F1-Score', fontsize=10, fontweight='bold')
 ax3.set_ylabel('')
-ax3.set_title('📊 Validación Cruzada (5-Fold)', fontsize=12, fontweight='bold', pad=10)
+ax3.set_title(' Validación Cruzada (5-Fold)', fontsize=12, fontweight='bold', pad=10)
 ax3.axvline(x=0.6, color='red', linestyle='--', alpha=0.5, label='Umbral 0.6')
 ax3.legend(fontsize=8)
 ax3.grid(axis='x', alpha=0.3)
 
-# --- GRÁFICO 4: Importancia de Features ---
+# --- GRAFICO 4: importancia de Features ---
 ax4 = fig.add_subplot(gs[1, 1])
 if hasattr(mejor_modelo, 'feature_importances_'):
     imp = pd.DataFrame({
@@ -292,7 +268,7 @@ else:
     ax4.set_title('🔍 Importancia de Features', fontsize=12, fontweight='bold', pad=10)
     ax4.axis('off')
 
-# --- GRÁFICO 5: Distribución de Clases (Real vs Predicho) ---
+# --- GRAFICO 5: distribucion de Clases (Real vs Predicho) ---
 ax5 = fig.add_subplot(gs[1, 2])
 x_pos = np.arange(len(clases))
 width = 0.35
@@ -311,7 +287,7 @@ ax5.set_xticklabels(clases)
 ax5.legend(fontsize=9)
 ax5.grid(axis='y', alpha=0.3)
 
-# --- GRÁFICO 6: Métricas Comparativas ---
+# --- GRAFICO 6: Metricas Comparativas ---
 ax6 = fig.add_subplot(gs[1, 3])
 metricas_names = ['F1\nCV', 'F1\nTest', 'Accuracy', 'Kappa']
 metricas_vals = [
@@ -325,7 +301,7 @@ colors_met = ['#3498db', '#2ecc71', '#f39c12', '#9b59b6']
 bars_met = ax6.bar(metricas_names, metricas_vals, color=colors_met, alpha=0.8)
 ax6.set_ylim(0, 1)
 ax6.set_ylabel('Score', fontsize=10, fontweight='bold')
-ax6.set_title(f'📊 Métricas - {mejor_nombre}', fontsize=12, fontweight='bold', pad=10)
+ax6.set_title(f'Métricas - {mejor_nombre}', fontsize=12, fontweight='bold', pad=10)
 ax6.axhline(y=0.8, color='green', linestyle='--', alpha=0.5, label='Excelente')
 ax6.axhline(y=0.6, color='orange', linestyle='--', alpha=0.5, label='Bueno')
 ax6.legend(fontsize=8, loc='lower right')
@@ -336,7 +312,7 @@ for bar, val in zip(bars_met, metricas_vals):
     ax6.text(bar.get_x() + bar.get_width()/2., height + 0.02,
              f'{val:.3f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
-# --- GRÁFICO 7: Distribución de Magnitud por Amenaza ---
+# --- GRAFICO 7: Distribucion de Magnitud por Amenaza ---
 ax7 = fig.add_subplot(gs[2, :2])
 for i in sorted(sismos_agg['amenaza'].unique()):
     datos = sismos_agg[sismos_agg['amenaza'] == i]['magnitud_max']
@@ -344,11 +320,11 @@ for i in sorted(sismos_agg['amenaza'].unique()):
 
 ax7.set_xlabel('Magnitud Máxima', fontsize=11, fontweight='bold')
 ax7.set_ylabel('Frecuencia', fontsize=11, fontweight='bold')
-ax7.set_title('🌍 Distribución de Magnitud por Clase de Amenaza', fontsize=13, fontweight='bold', pad=15)
+ax7.set_title(' Distribución de Magnitud por Clase de Amenaza', fontsize=13, fontweight='bold', pad=15)
 ax7.legend(fontsize=10)
 ax7.grid(axis='y', alpha=0.3)
 
-# --- GRÁFICO 8: Accuracy por Clase ---
+# --- GRAFICO 8: Accuracy por Clase ---
 ax8 = fig.add_subplot(gs[2, 2])
 from sklearn.metrics import precision_recall_fscore_support
 precision, recall, f1_scores, support = precision_recall_fscore_support(
@@ -364,14 +340,14 @@ ax8.bar(x_clase + width_clase, f1_scores, width_clase, label='F1', color='#e74c3
 
 ax8.set_ylabel('Score', fontsize=10, fontweight='bold')
 ax8.set_xlabel('Clase', fontsize=10, fontweight='bold')
-ax8.set_title('🎯 Métricas por Clase', fontsize=12, fontweight='bold', pad=10)
+ax8.set_title(' Métricas por Clase', fontsize=12, fontweight='bold', pad=10)
 ax8.set_xticks(x_clase)
 ax8.set_xticklabels(clases)
 ax8.set_ylim(0, 1.1)
 ax8.legend(fontsize=9)
 ax8.grid(axis='y', alpha=0.3)
 
-# --- GRÁFICO 9: Distribución de Amenazas (Dataset Completo) ---
+# --- GRAFICO 9: Distribucion de Amenazas (Dataset Completo) ---
 ax9 = fig.add_subplot(gs[2, 3])
 dist_df = pd.DataFrame(dist_amenaza)
 colors_pie = ['#2ecc71', '#f39c12', '#e74c3c']
@@ -389,62 +365,13 @@ for autotext in autotexts:
     autotext.set_fontweight('bold')
     autotext.set_fontsize(10)
 
-ax9.set_title('🗺️ Distribución de Amenazas\n(Dataset Completo)', 
+ax9.set_title('Distribución de Amenazas\n(Dataset Completo)', 
               fontsize=12, fontweight='bold', pad=10)
 
-# Título general
+# titulo general
 fig.suptitle('EVALUACIÓN COMPLETA DEL MODELO DE PREDICCIÓN SÍSMICA', 
              fontsize=16, fontweight='bold', y=0.98)
 
 plt.savefig(os.path.join(carpeta_salida, 'evaluacion_completa.png'), 
             dpi=300, bbox_inches='tight', facecolor='white')
-print(f"✅ Gráfico guardado: evaluacion_completa.png")
-
-# ============================================================================
-# RESUMEN FINAL
-# ============================================================================
-print("\n" + "="*80)
-print("✅ PROCESO COMPLETADO")
-print("="*80)
-
-print(f"\n📁 Archivos generados en '{carpeta_salida}':")
-print("   ├── modelo.pkl              (Mejor modelo entrenado)")
-print("   ├── scaler.pkl              (Escalador de features)")
-print("   ├── features.txt            (Lista de features)")
-print("   ├── train_stats.pkl         (Estadísticas del train)")
-print("   ├── comparacion_modelos.csv (Comparación de todos los modelos)")
-print("   └── evaluacion_completa.png (Visualización completa)")
-
-print(f"\n🏆 MEJOR MODELO: {mejor_nombre}")
-print(f"   ├── F1 Test:      {mejor[1]['f1']:.4f}")
-print(f"   ├── F1 CV:        {mejor[1]['cv_mean']:.4f} ± {mejor[1]['cv_std']:.4f}")
-print(f"   ├── Accuracy:     {mejor[1]['accuracy']:.4f}")
-print(f"   └── Cohen Kappa:  {mejor[1]['kappa']:.4f}")
-
-print(f"\n📊 DATASET:")
-print(f"   ├── Total municipios: {len(sismos_agg)}")
-print(f"   ├── Train:            {len(X_train)}")
-print(f"   ├── Test:             {len(X_test)}")
-print(f"   └── Features:         {len(features_finales)}")
-
-print(f"\n🎯 INTERPRETACIÓN:")
-if mejor[1]['kappa'] > 0.8:
-    print("   ✅ Excelente concordancia - Modelo confiable")
-elif mejor[1]['kappa'] > 0.6:
-    print("   ✅ Buena concordancia - Modelo aceptable")
-elif mejor[1]['kappa'] > 0.4:
-    print("   ⚠️  Concordancia moderada - Considerar mejoras")
-else:
-    print("   ❌ Concordancia pobre - Revisar modelo")
-
-if mejor[1]['cv_std'] < 0.1:
-    print("   ✅ Baja variabilidad en CV - Modelo estable")
-else:
-    print("   ⚠️  Alta variabilidad en CV - Modelo inestable")
-
-if abs(mejor[1]['f1'] - mejor[1]['cv_mean']) < 0.1:
-    print("   ✅ F1 Test similar a CV - No hay overfitting")
-else:
-    print("   ⚠️  F1 Test muy diferente a CV - Posible overfitting")
-
-print("\n" + "="*80)
+print(f" Grafico guardado: evaluacion_completa.png")
