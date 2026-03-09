@@ -88,7 +88,7 @@ print(f"Confianza: {confianza:.3f}")
 ## 👥 Autores
 
 - Samir Centeno — [@scentenoo](https://github.com/scentenoo)
-- [Nombre de tu compañero] — Universidad Nacional de Colombia, Sede Medellín
+- Jhefrey Vesga — Universidad Nacional de Colombia, Sede Medellín
 
 ---
 
